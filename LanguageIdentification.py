@@ -8,160 +8,139 @@
 # Purpose: Example for detecting language using a stopwords based approach
 # Created: 15/07/2020
 
-import sys
-
-try:
-    from nltk import wordpunct_tokenize
-    from nltk.corpus import stopwords
-except ImportError:
-    print ("[!] You need to install nltk (http://nltk.org/index.html)")
-
-def _calc_ratios(text):
-
-    """
-    Calculate probability of given text to be written in several languages and
-    return a dictionary that looks like {'french': 2, 'spanish': 4, 'english': 0}
-    """
-    ratios = {}
-
-    #nltk.wordpunct_tokenize() splits all punctuations into separate tokens
-    tokens = wordpunct_tokenize(text)
-    words = [word.lower() for word in tokens]
-    
-
-    # Compute per language included in nltk number of unique stopwords appearing in analyzed text
-    for lang in stopwords.fileids():
-        stopwords_set = set(stopwords.words(lang))
-        words_set = set(words)
-        common_words = words_set.intersection(stopwords_set)
-
-        ratios[lang] = len(common_words) #language score
-
-    return ratios
-
-def _calc_probability(most, secode_most) :
-    
-    """
-    Calculate probability of given text to be written in several languages and
-    return the highest scored.
-    
-    It uses a stopwords based approach, counting how many unique stopwords
-    are seen in analyzed text.
-    """
-    
-    proba = (float(most) /(most + secode_most) * 100)
-    return round(proba)
-
-def _calc_words(text) :
-    """
-    If we suppose that our text is containing different languages, 
-    this function is to claculate the number of words for each language in the text 
-    """
-    tokenizer = RegexpTokenizer(r'\w+')
-    tokens = tokenizer.tokenize(text) 
-    counts = Counter(tokens)
-    return counts
-
-def detect_language(text):
-
-    ratios = _calc_ratios(text)
-
-    most_rated_language = max(ratios, key=ratios.get)
-    most_common_words = ratios[most_rated_language]
-    del ratios[most_rated_language]
-    second_most_rated_language = max(ratios, key=ratios.get)
-    second_most_common_words = ratios[second_most_rated_language]
-
-    print ("The lengh of this text is %s" %(len(set(text))))
-    print("the number of languages in this text is %s" %(_calc_ratios(text)))
-    print("there is %s%% chances for this text to be writen in %s" %(_calc_probability(most_common_words, second_most_common_words), most_rated_language))
-    
-
-
-
-if __name__=='__main__':
-
-    #text snipet from http://latta.blog.lemonde.fr/2017/02/08/goal-line-technology-un-nouveau-bug-contre-son-camp/
-    text = '''Je m'appelle Angélica Summer, j'ai 12 ans et je suis canadienne. Il y a 5 ans, ma famille et moi avons déménagé dans le sud de la France. Mon père, Frank Summer, est mécanicien ; il adore les voitures anciennes et collectionne les voitures miniatures.'''
-    detect_language(text)
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-
-
-
-# In[ ]:
-
-
-#!/usr/bin/env python
 #coding:utf-8
-# Author: Hafid Mermouri
-# Created: 09/02/2017
+
 
 import sys
 
 from nltk import wordpunct_tokenize
 from nltk.corpus import stopwords
 
-def _calc_ratios(text):
+def calculate_ratios(text):
 
-    ratios = {}
-
+    """
+    Calculate the ratio of given text to be written in several languages and returns a list that looks 
+    like [{'french': 2,'english': 4},{'Frensh': {'de', 'la', 'au'}, 'english': {'on', 'you', 'in', 'the'}})
+    
+    """
+    
+    ratios_dict = {}
+    words_dict ={}
+    
+    #nltk.wordpunct_tokenize() splits all punctuations into separate tokens
     tokens = wordpunct_tokenize(text)
     words = [word.lower() for word in tokens]
 
-    for lang in stopwords.fileids():
-        stopwords_set = set(stopwords.words(lang))
+    #loop on the languages in stopwords
+    for langue in stopwords.fileids():
+        # oget stopwords from the selected language
+        stopwords_set = set(stopwords.words(langue))
+        #add the words of our text to a set
         words_set = set(words)
+        # get the list intersection between the words of our text and the stopwords of the language
         common_words = words_set.intersection(stopwords_set)
+        # add the number of the intersection list words
+        ratios_dict[langue] = len(common_words)
+        #add the intersection list of words
+        words_dict[langue] = common_words
 
-        ratios[lang] = len(common_words)
+    return ratios_dict, words_dict
 
-    return ratios
+
+def calculate_probability(most, secode_most) :
+    
+    """
+    Calculate probability of the two most rated languages found.
+    """
+    
+    #calculate the probability of the language "most" to be the language in which the text is written
+    proba = (float(most) /(most + secode_most) * 100)
+    return round(proba)
 
 
 def detect_language(text):
 
-    ratios = _calc_ratios(text)
+    """
+    Detect the language of the text by using a stopwords based approach, counting how many unique stopwords
+    are seen in analyzed text and calculate the probability of the two most rated languages
+    
+    """
+    # get the ratio and stopwords lists
+    ratios = calculate_ratios(text)
+    
+    #get the first most rated language
+    first_rated_language = max(ratios[0], key=ratios[0].get)
+    most_common_words = ratios[0][first_rated_language]
+    
+    #get the second most rated language
+    sorted_language_list = sorted(ratios[0].items(), key=lambda item: item[1], reverse=True)
+    second_rated_language = list(sorted_language_list)[1][0]
+    second_most_common_words = ratios[0][second_rated_language]
+    
+    #print the probability
+    print("\nThere is {0}% chances for this text to be writen in {1}\n" .format(calculate_probability(most_common_words, second_most_common_words), first_rated_language))
 
-    most_rated_language = max(ratios, key=ratios.get)
-    most_common_words = ratios[most_rated_language]
-    del ratios[most_rated_language]
-    second_most_rated_language = max(ratios, key=ratios.get)
-    second_most_common_words = ratios[second_most_rated_language]
+    
 
-    print("there is %s%% chances for this text to be writen in %s" %(_calc_probability(most_common_words, second_most_common_words), most_rated_language))
+def language_details(text, number):
+    
+    """
+     printing the probability of language which the text can be written in and
+     the most rated four languages found in the text with there stopwords
+    """
+    
+    print("Text %d" %number)
+    
+    detect_language(text)
+    
+    #  get text ratios and it's stopwords
+    langlist=calculate_ratios(text)
+    
+    #sort the language list by ratio to print the most rated four languages 
+    lang_list_sort=sorted(langlist[0].items(), key=lambda item: item[1], reverse=True)
+    
+    # print the ratio and the stopwords of the languages found
+    for lang in lang_list_sort[0:4]:
+        if lang[1] != 0 :
+            print("\t{0} has {1} word(s)" .format(lang[0],lang[1]))
+            print("\t\t{0} words list : {1}".format(lang[0],langlist[1][lang[0]]))
+             
+    
 
-
-def _calc_probability(most, secode_most) :
-    proba = (float(most) /(most + secode_most) * 100)
-    return round(proba)
-
+    
+    
 if __name__=='__main__':
 
-    #text snipet from http://latta.blog.lemonde.fr/2017/02/08/goal-line-technology-un-nouveau-bug-contre-son-camp/
-    text = '''
-    Le match de Ligue 1 Bordeaux-Rennes, ce week-end, a été le théâtre du troisième incident significatif
-    lié à l’usage de la Goal Line Technology depuis sa mise en œuvre dans divers championnats depuis deux saisons.
-    La montre de l’arbitre central Sébastien Desiage a vibré à la 44e minute, indiquant que le ballon était
-    entièrement entré dans la cage bordelaise au moment où le gardien Cédric Carrasso se saisissait de celui-ci,
-    pourtant nettement devant la ligne de but. Sébastien Desiage a heureusement choisi d’ignorer l’alerte et de ne
-    pas valider ce but virtuel, au grand soulagement du gardien des Girondins.
+    
+    text1 = '''
+    check if your able to understand the image bellow, it contains arabic text 
+    that says "ماذا سيحدث لك إذا توقفت عن التدخين لمدة يوم؟".
     '''
-
-    detect_language(text)
-
-
-# In[ ]:
-
-
-
-
+    
+    text2 = '''
+    il faut utiliser l'article A devant un nom commençant par un son "consonne" et 'AN' devant un nom commençant par un son "voyelle".
+    Exemples :
+    - door (porte) > a door (une porte)
+    /d/ est un son consonne
+    - apple (pomme) > an apple (une pomme)
+    /a/ est un son voyelle
+    - kitchen (cuisine) > a kitchen (une cuisine)
+    /k/ est un son consonne.
+    '''
+    
+    text3 = '''
+    ارتفعت حصيلة ضحايا فيروس كورونا في العالم إلى 600 ألف وفاة منذ ظهور الوباء في الصين في كانون الأول/ديسمبر 2019.
+    وأحصيت 100 ألف وفاة جديدة خلال 21 يوما فقط أي منذ 28 حزيران/يونيو. أغلب هذه الوفيات  شهدتها أوروبا بـ205,065 وفا
+    ة، تليها أمريكا اللاتينية بـ160 ألفا. فيما تم إحصاء أكثر من 14 مليون إصابة بالفيروس في 196 دولة ومنطقة.
+    وتجدر الإشارة إلى أن هذه الأرقام لا تعكس إلا جزءا من العدد الحقيقي للإصابات.
+    '''
+    
+    #*******************************************************
+    print(" Part1: Detects the probability of the text's languages \n")
+    language_details(text1, 1)
+    language_details(text2, 2)
+    language_details(text3, 3)
+    
+    #*******************************************************
+    
+    
