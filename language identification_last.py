@@ -1,5 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
+# Author: Sara Mesbahi & El-hassouni Fatima-Zahrae
+# Purpose: Example for detecting language using a stopwords based approach
+# Created: 15/07/2020
 
 # In[138]:
 
